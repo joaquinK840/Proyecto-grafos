@@ -1,0 +1,22 @@
+class queue:
+    def __init__(self):
+        self.items = []
+
+    def enqueue(self, item):
+        self.items.append(item)
+
+    def dequeue(self):
+        if self.is_empty():
+            raise IndexError("no se puede retirar un elemento de una cola vacia")
+        return self.items.pop(0)
+
+    def peek(self):
+        if self.is_empty():
+            raise IndexError("no se puede consultar una cola vacia")
+        return self.items[0]
+
+    def is_empty(self):
+        return len(self.items) == 0
+
+    def size(self):
+        return len(self.items)
