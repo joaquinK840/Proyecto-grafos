@@ -1,0 +1,67 @@
+{
+  "name": "Ejemplo mínimo",
+  "ge": {
+    "vertices": [
+      {
+        "id": "B",
+        "x": 1,
+        "y": 1,
+        "position_type": "base"
+      },
+      {
+        "id": "T1",
+        "x": 2,
+        "y": 2,
+        "position_type": "tower_candidate"
+      }
+    ],
+    "edges": [
+      {
+        "id": "GE-1",
+        "v1": "B",
+        "v2": "T1",
+        "connection_type": "path",
+        "foot_time": 5,
+        "moto_time": 2
+      }
+    ]
+  },
+  "gm": {
+    "vertices": [
+      {
+        "id": "IN",
+        "x": 0,
+        "y": 0,
+        "role": "entry"
+      },
+      {
+        "id": "OUT",
+        "x": 10,
+        "y": 0,
+        "role": "exit"
+      }
+    ],
+    "edges": [
+      {
+        "id": "GM-1",
+        "v1": "IN",
+        "v2": "OUT",
+        "length": 10,
+        "speed": 2
+      }
+    ]
+  },
+  "base_id": "B",
+  "entry_id": "IN",
+  "exit_id": "OUT",
+  "parameters": {
+    "tower_limit": 1,
+    "reference_time": 10,
+    "danger_alpha": 0,
+    "height_beta": 0,
+    "bridge_rebuild_time": 10,
+    "bridge_rebuild_people": 1,
+    "initial_budget": 1000,
+    "time_limit": 300
+  }
+}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CircleDot, GitBranch, RefreshCw, Waypoints } from "lucide-react";
 import { CreateEdgeForm } from "../components/forms/CreateEdgeForm";
 import { CreateVertexForm } from "../components/forms/CreateVertexForm";
+import { ScenarioLoader } from "../components/forms/ScenarioLoader";
 import { GraphCanvas } from "../components/graph/GraphCanvas";
 import { TraversalPanel } from "../components/graph/TraversalPanel";
 import { VertexDetails } from "../components/graph/VertexDetails";
@@ -113,6 +114,9 @@ export function GraphDashboard() {
           </div>
 
           <aside className="space-y-5">
+            <Panel title="Cargar escenario" description="Selecciona un archivo JSON compatible.">
+              <ScenarioLoader />
+            </Panel>
             <Panel title="Añadir vértice">
               <CreateVertexForm onCreate={(name) => createVertex({ name })} />
             </Panel>
