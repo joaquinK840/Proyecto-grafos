@@ -1,7 +1,25 @@
 # Proyecto de grafos
 
-Aplicación para la simulación de defensa descrita en
-`ProyectoGrafos.pdf`. El sistema combina FastAPI, React, TypeScript y D3.js.
+## Presentación
+
+**Proyecto:** Sistema de defensa para el corredor estratégico “La derrota del
+dictador General P. Tardo”.
+
+Esta aplicación permite simular la defensa de un corredor mediante dos redes
+de movimiento: una red elevada utilizada por las fuerzas humanas y un laberinto
+por el que avanza el convoy enemigo. Utiliza grafos, estructuras propias,
+algoritmos de caminos, planificación defensiva y una interfaz gráfica para
+mostrar el estado de la simulación.
+
+**Integrantes**
+
+- Jaider León Diaz
+- Joaquin Hoyos
+
+**Presentado a:** Jeferson Arango Lopez
+
+**Tecnologías:** Python, FastAPI, Pydantic, React, TypeScript, Vite, D3.js y
+Tailwind CSS.
 
 ## Estado actual
 
@@ -33,41 +51,23 @@ Aplicación para la simulación de defensa descrita en
 - [ ] Añadir dos escenarios JSON documentados.
 - [ ] Añadir manual técnico y manual de usuario.
 
-## Tecnologías
-
-| Capa | Tecnologías |
-| --- | --- |
-| Backend | Python 3.10+, FastAPI, Pydantic |
-| Frontend | React 19, TypeScript, Vite, D3.js, Tailwind CSS |
-| Pruebas backend | `unittest` |
-| Pruebas frontend | Build y ESLint |
-
 ## Inicio rápido
 
-### Backend
+Abrir dos terminales desde la carpeta raíz del proyecto.
 
-Desde la raíz:
+### 1. Ejecutar el backend
 
 ```powershell
-py -m venv backend\venv
-backend\venv\Scripts\python.exe -m pip install -r backend\requirements.txt
-backend\venv\Scripts\python.exe -m uvicorn backend.main:app --reload
+python -m venv backend\venv
+.\backend\venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+.\backend\venv\Scripts\python.exe -m uvicorn backend.main:app --reload
 ```
 
 API: <http://127.0.0.1:8000>
 
 Documentación: <http://127.0.0.1:8000/docs>
 
-También puede ejecutarse desde `backend`:
-
-```powershell
-cd backend
-py -m uvicorn main:app --reload
-```
-
-### Frontend
-
-Desde la raíz:
+### 2. Ejecutar el frontend
 
 ```powershell
 cd frontend
@@ -78,6 +78,31 @@ npm run dev
 Interfaz: normalmente <http://localhost:5173>
 
 Vite redirige las rutas `/api` al backend en el puerto `8000`.
+
+### Resolver el puerto ocupado
+
+`WinError 10013` significa que otra aplicación impide abrir el socket. Para
+verificar qué proceso utiliza el puerto `8000`:
+
+```powershell
+Get-NetTCPConnection -LocalPort 8000 -State Listen
+```
+
+Si el proceso corresponde a una ejecución anterior de Uvicorn, detenerlo
+por su PID:
+
+```powershell
+Stop-Process -Id <PID> -Force
+```
+
+Después ejecutar una sola vez:
+
+```powershell
+.\backend\venv\Scripts\python.exe -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+No repetir el comando de Uvicorn en varias terminales mientras la aplicación
+ya se encuentre escuchando en el puerto `8000`.
 
 ## Comandos de desarrollo
 
