@@ -43,12 +43,12 @@ export function CreateVertexForm({ onCreate }: CreateVertexFormProps) {
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="Ej. 12"
-          className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-600"
+          className="field-control min-w-0 flex-1 text-sm placeholder:text-slate-600"
         />
         <button
           type="submit"
           disabled={isSaving}
-          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className="button-primary px-4 text-sm font-semibold"
         >
           {isSaving ? "Guardando…" : "Crear"}
         </button>

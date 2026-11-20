@@ -35,6 +35,9 @@ Tailwind CSS.
 - [x] Validación centralizada de valores numéricos e identificadores.
 - [x] Carga y validación inicial de escenarios JSON.
 - [x] Cálculo del menor tiempo entre entrada y salida de GM.
+- [x] Interfaz moderna del centro de operaciones.
+- [x] Cabecera, tarjetas métricas y controles visuales reutilizables.
+- [x] Favicon personalizado de SismoLab AVL.
 
 ### Pendiente
 

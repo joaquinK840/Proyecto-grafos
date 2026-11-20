@@ -17,12 +17,12 @@ export function Panel({
 }: PanelProps) {
   return (
     <section
-      className={`rounded-2xl border border-slate-800 bg-slate-900/80 shadow-xl shadow-black/10 ${className}`}
+      className={`panel ${className}`}
     >
-      <header className="flex items-start justify-between gap-4 border-b border-slate-800 px-5 py-4">
+      <header className="panel-header">
         <div>
-          <h2 className="font-semibold text-slate-100">{title}</h2>
-          {description && <p className="mt-1 text-sm text-slate-400">{description}</p>}
+          <h2 className="text-[15px] font-semibold text-slate-100">{title}</h2>
+          {description && <p className="mt-1 text-xs leading-5 text-slate-400">{description}</p>}
         </div>
         {action}
       </header>

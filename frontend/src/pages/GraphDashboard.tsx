@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CircleDot, GitBranch, RefreshCw, Waypoints } from "lucide-react";
+import { CircleDot, GitBranch, Waypoints } from "lucide-react";
 import { CreateEdgeForm } from "../components/forms/CreateEdgeForm";
 import { CreateVertexForm } from "../components/forms/CreateVertexForm";
 import { ScenarioLoader } from "../components/forms/ScenarioLoader";
@@ -8,6 +8,8 @@ import { TraversalPanel } from "../components/graph/TraversalPanel";
 import { VertexDetails } from "../components/graph/VertexDetails";
 import { Notice } from "../components/ui/Notice";
 import { Panel } from "../components/ui/Panel";
+import { AppHeader } from "../components/ui/AppHeader";
+import { StatCard } from "../components/ui/StatCard";
 import { useGraph } from "../hooks/useGraph";
 import type { Vertex } from "../types/graph";
 
@@ -21,46 +23,32 @@ export function GraphDashboard() {
     : null;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(ellipse_at_top,_#1e1b4b_0%,_#0b1020_45%)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1500px] space-y-6">
-        <header className="flex flex-col justify-between gap-4 border-b border-slate-800 pb-5 sm:flex-row sm:items-center">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-indigo-500/15 p-2.5 text-indigo-300">
-                <GitBranch size={23} />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                  Graph Studio
-                </h1>
-                <p className="mt-1 text-sm text-slate-400">
-                  Administra y explora tu grafo dirigido.
-                </p>
-              </div>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => void refresh()}
-            disabled={isLoading}
-            className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-slate-500 hover:bg-slate-800 disabled:opacity-50 sm:self-auto"
-          >
-            <RefreshCw size={15} className={isLoading ? "animate-spin" : ""} />
-            Actualizar
-          </button>
-        </header>
+    <main className="app-shell">
+      <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+        <AppHeader isLoading={isLoading} onRefresh={() => void refresh()} />
 
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <StatCard label="Vértices" value={vertices.length} icon={<CircleDot size={18} />} />
-          <StatCard label="Aristas" value={edges.length} icon={<Waypoints size={18} />} />
-          <div className="col-span-2 sm:col-span-1">
-            <StatCard
-              label="Tipo de grafo"
-              value="Dirigido"
-              icon={<GitBranch size={18} />}
-              compact
-            />
-          </div>
+        <section className="grid gap-3 sm:grid-cols-3">
+          <StatCard
+            label="Redes activas"
+            value={vertices.length ? 2 : 0}
+            detail={vertices.length ? "GE elevada · GM laberinto" : "Sin escenario cargado"}
+            icon={<GitBranch size={18} />}
+            accent="indigo"
+          />
+          <StatCard
+            label="Posiciones"
+            value={vertices.length}
+            detail="Vértices disponibles"
+            icon={<CircleDot size={18} />}
+            accent="cyan"
+          />
+          <StatCard
+            label="Conexiones"
+            value={edges.length}
+            detail="Aristas dirigidas"
+            icon={<Waypoints size={18} />}
+            accent="emerald"
+          />
         </section>
 
         {error && (
@@ -69,7 +57,7 @@ export function GraphDashboard() {
             <button
               type="button"
               onClick={() => void refresh()}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              className="button-secondary"
             >
               Reintentar
             </button>
@@ -113,17 +101,17 @@ export function GraphDashboard() {
             <VertexDetails vertex={selected} edges={edges} />
           </div>
 
-          <aside className="space-y-5">
-            <Panel title="Cargar escenario" description="Selecciona un archivo JSON compatible.">
+          <aside className="space-y-4">
+            <Panel title="Escenario" description="Carga la configuración de las redes GE y GM.">
               <ScenarioLoader />
             </Panel>
-            <Panel title="Añadir vértice">
+            <Panel title="Nueva posición" description="Agrega un vértice al grafo operativo.">
               <CreateVertexForm onCreate={(name) => createVertex({ name })} />
             </Panel>
-            <Panel title="Añadir arista" description="Crea una conexión dirigida con peso.">
+            <Panel title="Nueva conexión" description="Crea una arista dirigida con peso.">
               <CreateEdgeForm vertices={vertices} onCreate={createEdge} />
             </Panel>
-            <Panel title="Recorridos" description="Explora el grafo desde un vértice inicial.">
+            <Panel title="Exploración" description="Ejecuta recorridos desde una posición inicial.">
               <TraversalPanel vertices={vertices} />
             </Panel>
           </aside>
@@ -133,23 +121,3 @@ export function GraphDashboard() {
   );
 }
 
-interface StatCardProps {
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  compact?: boolean;
-}
-
-function StatCard({ label, value, icon, compact = false }: StatCardProps) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-      <div className="rounded-lg bg-indigo-500/10 p-2 text-indigo-300">{icon}</div>
-      <div>
-        <p className="text-xs text-slate-400">{label}</p>
-        <p className={`mt-0.5 font-semibold text-slate-100 ${compact ? "text-base" : "text-xl"}`}>
-          {value}
-        </p>
-      </div>
-    </div>
-  );
-}

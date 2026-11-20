@@ -43,7 +43,7 @@ export function TraversalPanel({ vertices }: TraversalPanelProps) {
         id="traversal-start"
         value={start}
         onChange={(event) => setStart(event.target.value)}
-        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
+        className="field-control text-sm"
         disabled={!vertices.length}
       >
         <option value="">Selecciona un vértice</option>
@@ -56,7 +56,7 @@ export function TraversalPanel({ vertices }: TraversalPanelProps) {
           type="button"
           onClick={() => void runTraversal("breadth")}
           disabled={isRunning || !vertices.length}
-          className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700 disabled:opacity-50"
+          className="button-secondary min-h-[42px] px-3 text-sm"
         >
           BFS · Anchura
         </button>
@@ -64,7 +64,7 @@ export function TraversalPanel({ vertices }: TraversalPanelProps) {
           type="button"
           onClick={() => void runTraversal("depth")}
           disabled={isRunning || !vertices.length}
-          className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700 disabled:opacity-50"
+          className="button-secondary min-h-[42px] px-3 text-sm"
         >
           DFS · Profundidad
         </button>

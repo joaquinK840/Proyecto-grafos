@@ -46,7 +46,7 @@ export function ScenarioLoader() {
         accept=".json,application/json"
         onChange={(event) => void handleFileChange(event)}
         disabled={isLoading}
-        className="block w-full rounded-lg border border-slate-700 bg-slate-950 text-sm text-slate-300 file:mr-3 file:border-0 file:bg-indigo-500 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+        className="field-control block text-sm text-slate-300 file:mr-3 file:border-0 file:bg-indigo-500 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
       />
       {fileName && (
         <p className="text-xs text-slate-500">Archivo seleccionado: {fileName}</p>

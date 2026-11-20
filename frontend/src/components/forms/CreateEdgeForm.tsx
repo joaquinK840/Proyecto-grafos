@@ -30,8 +30,7 @@ export function CreateEdgeForm({ vertices, onCreate }: CreateEdgeFormProps) {
     }
   }
 
-  const selectClass =
-    "w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200";
+  const selectClass = "field-control text-sm text-slate-200";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
@@ -82,7 +81,7 @@ export function CreateEdgeForm({ vertices, onCreate }: CreateEdgeFormProps) {
       <button
         type="submit"
         disabled={isSaving || vertices.length < 2}
-        className="w-full rounded-lg border border-indigo-400/40 bg-indigo-500/10 px-4 py-2 text-sm font-semibold text-indigo-200 transition hover:bg-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+        className="button-primary w-full text-sm font-semibold"
       >
         {isSaving ? "Conectando…" : "Crear conexión"}
       </button>
