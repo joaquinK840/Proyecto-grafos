@@ -27,7 +27,7 @@ def _vertex_response(vertex) -> VertexResponse:
     return VertexResponse(
         name=vertex.get_name(),
         available=vertex.get_available(),
-        neighbors=[edge.get_v2().get_name() for edge in vertex.get_neighbors()],
+        neighbors=[neighbor.get_name() for neighbor in vertex.get_neighbors()],
     )
 
 

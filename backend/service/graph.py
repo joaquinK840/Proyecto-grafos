@@ -28,7 +28,7 @@ class GraphService:
         return [
             graph_edge
             for current_vertex in self.graph.vertices
-            for graph_edge in current_vertex.get_neighbors()
+            for graph_edge in current_vertex.get_edges()
         ]
 
     def get_vertex(self, name: int):
