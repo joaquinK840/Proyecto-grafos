@@ -1,7 +1,7 @@
 if __package__.startswith("backend."):
-    from ..validaciones.number_validator import validate_identifier, validate_finite
+    from ...utils.number_validator import validate_identifier, validate_finite
 else:
-    from core.validaciones.number_validator import validate_identifier, validate_finite
+    from utils.number_validator import validate_identifier, validate_finite
 
 
 class VertexMain:

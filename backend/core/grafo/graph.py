@@ -1,25 +1,42 @@
+from typing import Callable, Optional
+
 if __package__.startswith("backend."):
     from ..vertice.vertexMain import VertexMain
     from ..arista.edgeMain import EdgeMain
+    from .path_result import PathResult
+    from .funciones.add_vertex import add_vertex
+    from .funciones.add_edge import add_edge
+    from .funciones.get_vertex import get_vertex
+    from .funciones.breadth_first import breadth_first
+    from .funciones.depth_first import depth_first
+    from .funciones.shortest_path import shortest_path
 else:
     from core.vertice.vertexMain import VertexMain
     from core.arista.edgeMain import EdgeMain
+    from core.grafo.path_result import PathResult
+    from core.grafo.funciones.add_vertex import add_vertex
+    from core.grafo.funciones.add_edge import add_edge
+    from core.grafo.funciones.get_vertex import get_vertex
+    from core.grafo.funciones.breadth_first import breadth_first
+    from core.grafo.funciones.depth_first import depth_first
+    from core.grafo.funciones.shortest_path import shortest_path
 
 
-class VertexNotFoundError(LookupError):
-    """Raised when a vertex identifier does not exist in the graph."""
+class Graph:
+    """Base undirected graph shared by GE and GM.
 
+    Representation: adjacency list. The graph keeps two dictionaries,
+    {vertex_id: vertex} and {edge_id: edge}, for O(1) lookups, and every
+    vertex keeps its own list of incident edges.
 
-class DuplicateVertexError(ValueError):
-    """Raised when adding a vertex whose identifier already exists."""
-
-
-class graph:
-    """Generic undirected graph stored as an adjacency list.
-
-    Works with any VertexMain / EdgeMain subclass, so it can hold either GE
-    or GM elements.
+    This class only stores the data and delegates every operation to the
+    functions in ``core/grafo/funciones`` (one file per function).
+    Subclasses set ``VERTEX_TYPE`` / ``EDGE_TYPE`` so a graph only accepts
+    its own kind of elements, and override ``validate`` to add their rules.
     """
+
+    VERTEX_TYPE = VertexMain
+    EDGE_TYPE = EdgeMain
 
     def __init__(self):
         """Create an empty graph.
@@ -28,74 +45,132 @@ class graph:
         Returns:
             None.
         """
-        self.vertices = []
-
-    def vertex_exist(self, vertex: VertexMain) -> bool:
-        """Tell whether a vertex with the same identifier is in the graph.
-
-        Receives:
-            vertex: vertex to look for.
-        Returns:
-            bool: True if some stored vertex has the same identifier.
-        """
-        return any(existing.get_id() == vertex.get_id() for existing in self.vertices)
+        self._vertices = {}
+        self._edges = {}
 
     def add_vertex(self, vertex: VertexMain) -> None:
-        """Add a vertex to the graph.
+        """Add a vertex.
 
         Receives:
-            vertex: vertex to add.
+            vertex: instance of ``VERTEX_TYPE``.
         Returns:
             None.
+        How it works:
+            Delegates to ``funciones.add_vertex``.
         Raises:
-            DuplicateVertexError: if the identifier already exists.
+            TypeError, DuplicateVertexError.
         """
-        if self.vertex_exist(vertex):
-            raise DuplicateVertexError(f"el vertice {vertex.get_id()} ya existe en el grafo")
-        self.vertices.append(vertex)
+        add_vertex(self._vertices, vertex, self.VERTEX_TYPE)
+
+    def add_edge(self, edge: EdgeMain) -> None:
+        """Add an undirected edge between two stored vertices.
+
+        Receives:
+            edge: instance of ``EDGE_TYPE``.
+        Returns:
+            None.
+        How it works:
+            Delegates to ``funciones.add_edge``.
+        Raises:
+            TypeError, DuplicateEdgeError, VertexNotFoundError.
+        """
+        add_edge(self._vertices, self._edges, edge, self.EDGE_TYPE)
 
     def get_vertex(self, vertex_id: str) -> VertexMain:
-        """Return the stored vertex with the given identifier.
+        """Return a stored vertex by identifier.
 
         Receives:
             vertex_id: identifier to look for.
         Returns:
             VertexMain: the stored vertex.
         Raises:
-            VertexNotFoundError: if no vertex has that identifier.
+            VertexNotFoundError: if it does not exist.
         """
-        for existing in self.vertices:
-            if existing.get_id() == vertex_id:
-                return existing
-        raise VertexNotFoundError(f"el vertice {vertex_id} no existe en el grafo")
+        return get_vertex(self._vertices, vertex_id)
 
-    def add_edge(self, edge_to_add: EdgeMain) -> EdgeMain:
-        """Add an undirected edge between two existing vertices.
+    def has_vertex(self, vertex_id: str) -> bool:
+        """Tell whether a vertex identifier exists.
 
         Receives:
-            edge_to_add: edge whose endpoints must be vertices stored in
-                this graph.
+            vertex_id: identifier to look for.
         Returns:
-            EdgeMain: the same edge, now registered.
-        How it works:
-            Checks both endpoints are the stored instances and registers the
-            edge in both adjacency lists (undirected graph).
-        Raises:
-            VertexNotFoundError: if an endpoint is not in the graph.
+            bool: True if it is stored.
         """
-        for endpoint in edge_to_add.get_endpoints():
-            if self.get_vertex(endpoint.get_id()) is not endpoint:
-                raise VertexNotFoundError(f"el vertice {endpoint.get_id()} no pertenece a este grafo")
-        edge_to_add.get_v1().add_edge(edge_to_add)
-        edge_to_add.get_v2().add_edge(edge_to_add)
-        return edge_to_add
+        return vertex_id in self._vertices
 
-    def get_neighbors(self, vertex: VertexMain) -> list:
-        """Return the neighbors of a stored vertex.
+    def get_vertices(self) -> list:
+        """Return every vertex in insertion order.
+
+        Receives: nothing.
+        Returns:
+            list: the stored vertices.
+        """
+        return list(self._vertices.values())
+
+    def get_edges(self) -> list:
+        """Return every edge in insertion order.
+
+        Receives: nothing.
+        Returns:
+            list: the stored edges.
+        """
+        return list(self._edges.values())
+
+    def get_neighbors(self, vertex_id: str) -> list:
+        """Return the neighbors of a vertex (through any edge).
 
         Receives:
-            vertex: vertex whose neighbors are requested.
+            vertex_id: identifier of the vertex.
         Returns:
             list: vertices at the other end of each incident edge.
         """
-        return self.get_vertex(vertex.get_id()).get_neighbors()
+        return self.get_vertex(vertex_id).get_neighbors()
+
+    def breadth_first(self, start_id: str) -> list:
+        """Breadth-first traversal through available edges.
+
+        Receives:
+            start_id: identifier of the start vertex.
+        Returns:
+            list: vertices in visit order.
+        How it works:
+            Delegates to ``funciones.breadth_first``.
+        """
+        return breadth_first(self.get_vertex(start_id))
+
+    def depth_first(self, start_id: str) -> list:
+        """Depth-first traversal through available edges.
+
+        Receives:
+            start_id: identifier of the start vertex.
+        Returns:
+            list: vertices in visit order.
+        How it works:
+            Delegates to ``funciones.depth_first``.
+        """
+        return depth_first(self.get_vertex(start_id))
+
+    def shortest_path(self, origin_id: str, destination_id: str,
+                      weight: Callable) -> Optional[PathResult]:
+        """Minimum cost path through available edges (Dijkstra).
+
+        Receives:
+            origin_id: identifier of the start vertex.
+            destination_id: identifier of the target vertex.
+            weight: function edge -> non-negative cost.
+        Returns:
+            Optional[PathResult]: the path, or None if unreachable.
+        How it works:
+            Delegates to ``funciones.shortest_path``.
+        """
+        return shortest_path(self.get_vertex(origin_id), self.get_vertex(destination_id), weight)
+
+    def validate(self) -> None:
+        """Check the invariants of the whole graph.
+
+        Receives: nothing.
+        Returns:
+            None.
+        How it works:
+            The base graph has no global rules; GE and GM override it.
+        """

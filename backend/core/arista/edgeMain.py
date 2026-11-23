@@ -1,9 +1,9 @@
 if __package__.startswith("backend."):
     from ..vertice.vertexMain import VertexMain
-    from ..validaciones.number_validator import validate_identifier
+    from ...utils.number_validator import validate_identifier
 else:
     from core.vertice.vertexMain import VertexMain
-    from core.validaciones.number_validator import validate_identifier
+    from utils.number_validator import validate_identifier
 
 
 class EdgeMain:

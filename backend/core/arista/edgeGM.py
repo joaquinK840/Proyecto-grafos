@@ -1,6 +1,11 @@
-from core.arista.edgeMain import EdgeMain
-from core.vertice.vertexGM import VertexGM
-from core.validaciones.number_validator import validate_positive
+if __package__.startswith("backend."):
+    from .edgeMain import EdgeMain
+    from ..vertice.vertexGM import VertexGM
+    from ...utils.number_validator import validate_positive
+else:
+    from core.arista.edgeMain import EdgeMain
+    from core.vertice.vertexGM import VertexGM
+    from utils.number_validator import validate_positive
 
 
 class EdgeGM(EdgeMain):

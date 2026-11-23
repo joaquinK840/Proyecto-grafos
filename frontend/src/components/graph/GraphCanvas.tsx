@@ -1,192 +1,147 @@
-import { useEffect, useRef } from "react";
-import * as d3 from "d3";
-import type { Edge, Vertex } from "../../types/graph";
+import { useMemo, useRef, type KeyboardEvent } from "react";
+import { useElementSize } from "../../hooks/useElementSize";
+import { projectToScreen } from "../../presentation/canvasLayout";
+import type { CanvasLink, CanvasNode } from "../../types/graphView";
+
+const NODE_RADIUS = 15;
+const PADDING = 56;
 
 interface GraphCanvasProps {
-  vertices: Vertex[];
-  edges: Edge[];
-  selectedVertexId: number | null;
-  onSelectVertex: (vertex: Vertex) => void;
+  nodes: CanvasNode[];
+  links: CanvasLink[];
+  selectedId: string | null;
+  /** Ids in traversal order; each node shows its position as a badge. */
+  visitOrder: string[];
+  showLabels: boolean;
+  onSelect: (vertexId: string) => void;
 }
 
-interface SimNode extends d3.SimulationNodeDatum {
-  name: number;
-  available: boolean;
-}
-
-interface SimLink extends d3.SimulationLinkDatum<SimNode> {
-  source: number | SimNode;
-  target: number | SimNode;
-  weight: number;
-}
-
+/**
+ * Draw an undirected graph at the real coordinates of its vertices.
+ *
+ * It is graph-agnostic: colors come from the `tone` of nodes and links
+ * (CSS classes), so the same component draws GE and GM.
+ *
+ * @param props.nodes Vertices to draw.
+ * @param props.links Edges to draw (unavailable ones are dashed in red,
+ *        highlighted ones are drawn thicker in green).
+ * @param props.selectedId Vertex to highlight as selected.
+ * @param props.visitOrder Traversal result to show as numbered badges.
+ * @param props.showLabels Whether to draw the edge labels.
+ * @param props.onSelect Called with the id of a clicked / activated vertex.
+ */
 export function GraphCanvas({
-  vertices,
-  edges,
-  selectedVertexId,
-  onSelectVertex,
+  nodes,
+  links,
+  selectedId,
+  visitOrder,
+  showLabels,
+  onSelect,
 }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-  const onSelectRef = useRef(onSelectVertex);
+  const { width, height } = useElementSize(containerRef);
 
-  useEffect(() => {
-    onSelectRef.current = onSelectVertex;
-  }, [onSelectVertex]);
+  const positions = useMemo(
+    () => projectToScreen(nodes, width, height, PADDING),
+    [nodes, width, height],
+  );
+  const orderById = useMemo(
+    () => new Map(visitOrder.map((id, index) => [id, index + 1])),
+    [visitOrder],
+  );
 
-  useEffect(() => {
-    const container = containerRef.current;
-    const svgElement = svgRef.current;
-    if (!container || !svgElement) return;
-
-    const svg = d3.select(svgElement);
-    svg.selectAll("*").remove();
-
-    const { width, height } = container.getBoundingClientRect();
-    if (!width || !height || vertices.length === 0) return;
-
-    const nodes: SimNode[] = vertices.map((vertex) => ({
-      name: vertex.name,
-      available: vertex.available,
-    }));
-    const links: SimLink[] = edges.map((edge) => ({
-      source: edge.source,
-      target: edge.target,
-      weight: edge.weight,
-    }));
-
-    const root = svg.attr("viewBox", `0 0 ${width} ${height}`);
-    root
-      .append("defs")
-      .append("marker")
-      .attr("id", "graph-arrow")
-      .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 25)
-      .attr("refY", 0)
-      .attr("markerWidth", 6)
-      .attr("markerHeight", 6)
-      .attr("orient", "auto")
-      .append("path")
-      .attr("d", "M0,-5L10,0L0,5")
-      .attr("fill", "#64748b");
-    const link = root
-      .append("g")
-      .selectAll<SVGLineElement, SimLink>("line")
-      .data(links)
-      .join("line")
-      .attr("class", "graph-link")
-      .attr("marker-end", "url(#graph-arrow)");
-    const linkLabels = root
-      .append("g")
-      .selectAll<SVGTextElement, SimLink>("text")
-      .data(links)
-      .join("text")
-      .attr("class", "graph-link-label")
-      .attr("text-anchor", "middle")
-      .text((edge) => edge.weight);
-    const node = root
-      .append("g")
-      .selectAll<SVGGElement, SimNode>("g")
-      .data(nodes, (datum) => datum.name)
-      .join("g")
-      .attr("class", (datum) =>
-        datum.name === selectedVertexId ? "graph-node is-selected" : "graph-node",
-      )
-      .attr("role", "button")
-      .attr("tabindex", 0)
-      .attr("aria-label", (datum) => `Seleccionar vértice ${datum.name}`)
-      .on("click", (_event, datum) => {
-        const selected = vertices.find((vertex) => vertex.name === datum.name);
-        if (selected) onSelectRef.current(selected);
-      })
-      .on("keydown", (event, datum) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        const selected = vertices.find((vertex) => vertex.name === datum.name);
-        if (selected) onSelectRef.current(selected);
-      });
-
-    node
-      .append("circle")
-      .attr("r", 22)
-      .attr("stroke", (datum) => (datum.available ? null : "#f87171"));
-    node
-      .append("text")
-      .text((datum) => datum.name);
-
-    const simulation = d3
-      .forceSimulation<SimNode>(nodes)
-      .force(
-        "link",
-        d3.forceLink<SimNode, SimLink>(links).id((datum) => datum.name).distance(125),
-      )
-      .force("charge", d3.forceManyBody().strength(-420))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collide", d3.forceCollide(42))
-      .on("tick", () => {
-        link
-          .attr("x1", (datum) => (datum.source as SimNode).x ?? 0)
-          .attr("y1", (datum) => (datum.source as SimNode).y ?? 0)
-          .attr("x2", (datum) => (datum.target as SimNode).x ?? 0)
-          .attr("y2", (datum) => (datum.target as SimNode).y ?? 0);
-        linkLabels
-          .attr(
-            "x",
-            (datum) =>
-              (((datum.source as SimNode).x ?? 0) + ((datum.target as SimNode).x ?? 0)) /
-              2,
-          )
-          .attr(
-            "y",
-            (datum) =>
-              (((datum.source as SimNode).y ?? 0) + ((datum.target as SimNode).y ?? 0)) /
-              2,
-          );
-        node.attr("transform", (datum) => `translate(${datum.x ?? 0},${datum.y ?? 0})`);
-      });
-
-    node.call(
-      d3
-        .drag<SVGGElement, SimNode>()
-        .on("start", (event, datum) => {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
-          datum.fx = datum.x;
-          datum.fy = datum.y;
-        })
-        .on("drag", (event, datum) => {
-          datum.fx = event.x;
-          datum.fy = event.y;
-        })
-        .on("end", (event, datum) => {
-          if (!event.active) simulation.alphaTarget(0);
-          datum.fx = null;
-          datum.fy = null;
-        }),
-    );
-
-    const observer = new ResizeObserver(() => {
-      const bounds = container.getBoundingClientRect();
-      if (!bounds.width || !bounds.height) return;
-      svg.attr("viewBox", `0 0 ${bounds.width} ${bounds.height}`);
-      simulation.force("center", d3.forceCenter(bounds.width / 2, bounds.height / 2));
-      simulation.alpha(0.4).restart();
-    });
-    observer.observe(container);
-
-    return () => {
-      observer.disconnect();
-      simulation.stop();
-    };
-  }, [edges, selectedVertexId, vertices]);
+  /**
+   * Activate a vertex with Enter or Space (keyboard accessibility).
+   *
+   * @param event Keyboard event on the node.
+   * @param vertexId Node that received the event.
+   */
+  function handleKeyDown(event: KeyboardEvent<SVGGElement>, vertexId: string) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onSelect(vertexId);
+  }
 
   return (
-    <div ref={containerRef} className="graph-grid h-[28rem] w-full overflow-hidden rounded-xl">
-      <svg
-        ref={svgRef}
-        className="h-full w-full"
-        role="img"
-        aria-label="Grafo dirigido. Selecciona un vértice para ver sus detalles."
-      />
+    <div ref={containerRef} className="graph-grid h-[30rem] w-full overflow-hidden rounded-xl">
+      {width > 0 && height > 0 && (
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="h-full w-full"
+          role="group"
+          aria-label="Grafo no dirigido dibujado en sus coordenadas. Selecciona un vértice para ver sus detalles."
+        >
+          <g>
+            {links.map((link) => {
+              const from = positions.get(link.source);
+              const to = positions.get(link.target);
+              if (!from || !to) return null;
+              const classes = [
+                "graph-link",
+                `link-${link.tone}`,
+                link.available ? "" : "is-unavailable",
+                link.highlighted ? "is-route" : "",
+              ].join(" ");
+              return (
+                <g key={link.id}>
+                  <line className={classes} x1={from.x} y1={from.y} x2={to.x} y2={to.y}>
+                    <title>{`${link.id}: ${link.label}`}</title>
+                  </line>
+                  {showLabels && (
+                    <text
+                      className="graph-link-label"
+                      x={(from.x + to.x) / 2}
+                      y={(from.y + to.y) / 2 - 6}
+                      textAnchor="middle"
+                    >
+                      {link.label}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </g>
+
+          <g>
+            {nodes.map((node) => {
+              const point = positions.get(node.id);
+              if (!point) return null;
+              const order = orderById.get(node.id);
+              const classes = [
+                "graph-node",
+                `node-${node.tone}`,
+                node.id === selectedId ? "is-selected" : "",
+                order ? "is-visited" : "",
+              ].join(" ");
+              return (
+                <g
+                  key={node.id}
+                  className={classes}
+                  transform={`translate(${point.x},${point.y})`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Seleccionar vértice ${node.tooltip}`}
+                  aria-pressed={node.id === selectedId}
+                  onClick={() => onSelect(node.id)}
+                  onKeyDown={(event) => handleKeyDown(event, node.id)}
+                >
+                  <title>{node.tooltip}</title>
+                  <circle r={NODE_RADIUS} />
+                  <text className="graph-node-label" y={NODE_RADIUS + 14}>
+                    {node.id}
+                  </text>
+                  {order && (
+                    <g className="graph-node-order" transform={`translate(${NODE_RADIUS},${-NODE_RADIUS})`}>
+                      <circle r={9} />
+                      <text>{order}</text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        </svg>
+      )}
     </div>
   );
 }

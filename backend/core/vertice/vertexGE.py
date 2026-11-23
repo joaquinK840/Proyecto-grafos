@@ -1,6 +1,11 @@
-from core.vertice.vertexMain import VertexMain
-from core.vertice.position_type import PositionType
-from core.validaciones.number_validator import validate_positive
+if __package__.startswith("backend."):
+    from .vertexMain import VertexMain
+    from .position_type import PositionType
+    from ...utils.number_validator import validate_positive
+else:
+    from core.vertice.vertexMain import VertexMain
+    from core.vertice.position_type import PositionType
+    from utils.number_validator import validate_positive
 
 
 class VertexGE(VertexMain):

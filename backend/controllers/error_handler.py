@@ -2,47 +2,51 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 if __package__.startswith("backend."):
-    from ..core.grafo.graph import DuplicateVertexError, VertexNotFoundError
-    from ..domain.scenario import ScenarioValidationError
+    from ..core.grafo.graph_errors import VertexNotFoundError
+    from ..domain.scenario_errors import ScenarioNotLoadedError, ScenarioValidationError
 else:
-    from core.grafo.graph import DuplicateVertexError, VertexNotFoundError
-    from domain.scenario import ScenarioValidationError
+    from core.grafo.graph_errors import VertexNotFoundError
+    from domain.scenario_errors import ScenarioNotLoadedError, ScenarioValidationError
 
 
-async def duplicate_vertex_handler(
-    request: Request,
-    exception: DuplicateVertexError,
-):
-    return JSONResponse(
-        status_code=status.HTTP_409_CONFLICT,
-        content={"detail": str(exception)},
-    )
+# Domain exception -> HTTP status code. Adding a new error only needs a row.
+_STATUS_BY_ERROR = {
+    VertexNotFoundError: status.HTTP_404_NOT_FOUND,
+    ScenarioValidationError: status.HTTP_422_UNPROCESSABLE_ENTITY,
+    ScenarioNotLoadedError: status.HTTP_409_CONFLICT,
+}
 
 
-async def vertex_not_found_handler(
-    request: Request,
-    exception: VertexNotFoundError,
-):
-    return JSONResponse(
-        status_code=status.HTTP_404_NOT_FOUND,
-        content={"detail": str(exception)},
-    )
+def _build_handler(status_code: int):
+    """Create an exception handler that answers with a fixed status code.
+
+    Receives:
+        status_code: HTTP status to return.
+    Returns:
+        Callable: async FastAPI handler that responds {"detail": message}.
+    """
+
+    async def handler(request: Request, exception: Exception) -> JSONResponse:
+        """Turn a domain exception into a JSON HTTP response.
+
+        Receives:
+            request: current request (unused).
+            exception: the raised domain exception.
+        Returns:
+            JSONResponse: {"detail": str(exception)} with ``status_code``.
+        """
+        return JSONResponse(status_code=status_code, content={"detail": str(exception)})
+
+    return handler
 
 
-async def scenario_validation_handler(
-    request: Request,
-    exception: ScenarioValidationError,
-):
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": str(exception)},
-    )
+def register_exception_handlers(app: FastAPI) -> None:
+    """Register every domain exception handler in the app.
 
-
-def register_exception_handlers(app: FastAPI):
-    app.add_exception_handler(DuplicateVertexError, duplicate_vertex_handler)
-    app.add_exception_handler(VertexNotFoundError, vertex_not_found_handler)
-    app.add_exception_handler(
-        ScenarioValidationError,
-        scenario_validation_handler,
-    )
+    Receives:
+        app: FastAPI application.
+    Returns:
+        None.
+    """
+    for error_type, status_code in _STATUS_BY_ERROR.items():
+        app.add_exception_handler(error_type, _build_handler(status_code))

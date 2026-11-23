@@ -1,43 +1,47 @@
-import type { Edge, EdgeInput, Traversal, Vertex, VertexInput } from "../types/graph";
+import type {
+  EdgeGE,
+  EdgeGM,
+  ElevatedGraphData,
+  GraphKind,
+  MazeGraphData,
+  Traversal,
+  TraversalKind,
+  VertexGE,
+  VertexGM,
+} from "../types/graph";
+import { request } from "./httpClient";
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`/api${path}`, {
-    ...init,
-    headers: {
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-
-  if (!response.ok) {
-    let message = `Error ${response.status}: no se pudo completar la solicitud.`;
-    try {
-      const body: { detail?: string } = await response.json();
-      if (body.detail) message = body.detail;
-    } catch {
-      // Si la respuesta no es JSON, se conserva el mensaje HTTP.
-    }
-    throw new Error(message);
-  }
-
-  return response.json() as Promise<T>;
+/**
+ * Fetch vertices and edges of one graph in parallel.
+ *
+ * @param kind "ge" or "gm".
+ * @returns The graph data.
+ */
+async function fetchGraph<V, E>(kind: GraphKind) {
+  const [vertices, edges] = await Promise.all([
+    request<V[]>(`/graphs/${kind}/vertices`),
+    request<E[]>(`/graphs/${kind}/edges`),
+  ]);
+  return { vertices, edges };
 }
 
+/** HTTP calls for the graphs of the loaded scenario. */
 export const graphApi = {
-  getVertices: () => request<Vertex[]>("/vertices"),
-  getEdges: () => request<Edge[]>("/edges"),
-  createVertex: (vertex: VertexInput) =>
-    request<Vertex>("/vertices", {
-      method: "POST",
-      body: JSON.stringify(vertex),
-    }),
-  createEdge: (edge: EdgeInput) =>
-    request<Edge>("/edges", {
-      method: "POST",
-      body: JSON.stringify(edge),
-    }),
-  breadthFirst: (start: number) =>
-    request<Traversal>(`/traversals/breadth-first?start=${start}`),
-  depthFirst: (start: number) =>
-    request<Traversal>(`/traversals/depth-first?start=${start}`),
+  /** Vertices and edges of the elevated graph GE. */
+  getElevatedGraph: (): Promise<ElevatedGraphData> => fetchGraph<VertexGE, EdgeGE>("ge"),
+
+  /** Vertices and edges of the maze graph GM. */
+  getMazeGraph: (): Promise<MazeGraphData> => fetchGraph<VertexGM, EdgeGM>("gm"),
+
+  /**
+   * Run a traversal on one graph.
+   *
+   * @param kind Graph to traverse.
+   * @param traversal "breadth-first" or "depth-first".
+   * @param start Identifier of the start vertex.
+   */
+  traverse: (kind: GraphKind, traversal: TraversalKind, start: string) =>
+    request<Traversal>(
+      `/graphs/${kind}/traversals/${traversal}?start=${encodeURIComponent(start)}`,
+    ),
 };

@@ -141,24 +141,29 @@ Proyecto-grafos/
 │   │   ├── error_handler.py
 │   │   ├── graph_controller.py
 │   │   └── scenario_controller.py
-│   ├── domain/
-│   │   └── scenario.py
-│   ├── schemas/
-│   │   ├── graph_schemas.py
-│   │   └── scenario_schemas.py
+│   ├── domain/                 # Scenario, ScenarioSummary, GraphKind, errores
+│   ├── repository/             # escenario cargado en memoria
+│   ├── schemas/                # un schema por cosa (vertex_ge, edge_gm, graph_ge, scenario...)
 │   ├── service/
-│   │   ├── graph.py
-│   │   └── scenario.py
+│   │   ├── graph/
+│   │   │   ├── graph.py        # fachada GraphService
+│   │   │   └── funciones/      # un archivo por función
+│   │   └── scenario/
+│   │       ├── scenario.py     # fachada ScenarioService
+│   │       └── funciones/      # un archivo por función
 │   ├── core/
-│   │   ├── arista/
+│   │   ├── arista/             # EdgeMain, EdgeGE, EdgeGM
 │   │   ├── grafo/
+│   │   │   ├── graph.py        # Graph base (solo delega)
+│   │   │   ├── graphGE.py
+│   │   │   ├── graphGM.py
+│   │   │   └── funciones/      # lógica del grafo: BFS, DFS, Dijkstra, validaciones...
+│   │   ├── heap/               # MinHeap (cola de prioridad propia)
 │   │   ├── queue/
 │   │   ├── stack/
-│   │   ├── validaciones/
-│   │   └── vertice/
+│   │   └── vertice/            # VertexMain, VertexGE, VertexGM
+│   ├── utils/                  # funciones reutilizables (validadores numéricos)
 │   └── tests/
-│       ├── test_graph_service.py
-│       └── test_scenario_service.py
 └── frontend/
     └── src/
         ├── components/
@@ -173,10 +178,15 @@ Proyecto-grafos/
 ### Responsabilidades
 
 - `controllers/`: recibe peticiones HTTP y transforma respuestas.
-- `service/`: coordina casos de uso y conserva la lógica de aplicación fuera de FastAPI.
-- `domain/`: contiene reglas e invariantes independientes del transporte HTTP.
-- `schemas/`: define entradas y respuestas Pydantic.
-- `core/`: contiene estructuras propias, vértices, aristas y validadores.
+- `service/`: fachadas de casos de uso; cada servicio tiene su carpeta con
+  `funciones/` (un archivo por función) y la fachada solo las llama.
+- `domain/`: entidades de aplicación (escenario, resumen) y sus errores.
+- `repository/`: guarda el escenario cargado; los servicios lo reciben por constructor.
+- `schemas/`: entradas y respuestas Pydantic, un archivo por cosa. Solo validan
+  la forma del JSON; las reglas las aplican las clases del core.
+- `core/`: estructuras de datos propias (vértices, aristas, grafos, cola, pila, heap).
+  Cada grafo delega su lógica en `core/grafo/funciones/`.
+- `utils/`: funciones reutilizables que no son estructuras de datos.
 - `frontend/src/services/`: contiene las llamadas HTTP.
 - `frontend/src/hooks/`: contiene estado y acciones reutilizables.
 - `frontend/src/components/`: contiene presentación separada por responsabilidad.
@@ -185,18 +195,18 @@ Proyecto-grafos/
 
 | Método | Ruta | Función |
 | --- | --- | --- |
-| `POST` | `/api/vertices` | Crea un vértice |
-| `GET` | `/api/vertices` | Lista vértices |
-| `GET` | `/api/vertices/{vertex_id}` | Consulta un vértice |
-| `POST` | `/api/edges` | Crea una arista |
-| `GET` | `/api/edges` | Lista aristas |
-| `GET` | `/api/vertices/{vertex_id}/neighbors` | Lista vecinos |
-| `GET` | `/api/traversals/breadth-first?start={id}` | Ejecuta BFS |
-| `GET` | `/api/traversals/depth-first?start={id}` | Ejecuta DFS |
-| `POST` | `/api/scenarios/load` | Valida y carga un escenario JSON |
+| `POST` | `/api/scenarios/load` | Valida, construye y guarda un escenario JSON |
+| `GET` | `/api/scenarios/current` | Resumen del escenario cargado |
+| `GET` | `/api/graphs/{ge\|gm}/vertices` | Lista vértices del grafo |
+| `GET` | `/api/graphs/{ge\|gm}/vertices/{vertex_id}` | Consulta un vértice |
+| `GET` | `/api/graphs/{ge\|gm}/vertices/{vertex_id}/neighbors` | Lista vecinos |
+| `GET` | `/api/graphs/{ge\|gm}/edges` | Lista aristas |
+| `GET` | `/api/graphs/{ge\|gm}/traversals/breadth-first?start={id}` | Ejecuta BFS |
+| `GET` | `/api/graphs/{ge\|gm}/traversals/depth-first?start={id}` | Ejecuta DFS |
 
-El grafo operativo actual se conserva en memoria y se reinicia al reiniciar el
-backend.
+Los grafos se construyen al cargar el escenario (ya no se crean vértices ni
+aristas a mano). El escenario se conserva en memoria y se pierde al reiniciar
+el backend; sin escenario cargado, las consultas de grafos responden 409.
 
 ## Formato inicial de escenario
 
@@ -235,9 +245,11 @@ Invariantes validadas actualmente:
 
 ### Backend
 
-1. Añadir modelos de entrada en `backend/schemas/`.
-2. Añadir reglas independientes de HTTP en `backend/domain/`.
-3. Coordinar el caso de uso en `backend/service/`.
+1. Añadir un schema por cosa en `backend/schemas/` (importando los de sus partes).
+2. Poner las reglas de cada entidad en su clase del core, y la lógica de los
+   grafos en `backend/core/grafo/funciones/`.
+3. Coordinar el caso de uso en `backend/service/<servicio>/funciones/` y
+   exponerlo desde la fachada `backend/service/<servicio>/<servicio>.py`.
 4. Exponer rutas pequeñas en `backend/controllers/`.
 5. Registrar la ruta en `backend/main.py`.
 6. Añadir pruebas en `backend/tests/`.

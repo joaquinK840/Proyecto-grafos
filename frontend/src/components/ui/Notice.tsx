@@ -9,11 +9,17 @@ const toneStyles = {
   success: "border-emerald-900/80 bg-emerald-950/50 text-emerald-200",
 };
 
+/**
+ * Colored message box (error, information or success).
+ *
+ * @param props.children Message; line breaks are preserved.
+ * @param props.tone Visual style and ARIA role (errors use role="alert").
+ */
 export function Notice({ children, tone = "info" }: NoticeProps) {
   return (
     <p
       role={tone === "error" ? "alert" : "status"}
-      className={`rounded-xl border px-4 py-3 text-sm ${toneStyles[tone]}`}
+      className={`whitespace-pre-line rounded-xl border px-4 py-3 text-sm ${toneStyles[tone]}`}
     >
       {children}
     </p>

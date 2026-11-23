@@ -4,12 +4,12 @@ if __package__.startswith("backend."):
     from .edgeMain import EdgeMain
     from .connection_type import ConnectionType
     from ..vertice.vertexGE import VertexGE
-    from ..validaciones.number_validator import validate_positive, validate_positive_int
+    from ...utils.number_validator import validate_positive, validate_positive_int
 else:
     from core.arista.edgeMain import EdgeMain
     from core.arista.connection_type import ConnectionType
     from core.vertice.vertexGE import VertexGE
-    from core.validaciones.number_validator import validate_positive, validate_positive_int
+    from utils.number_validator import validate_positive, validate_positive_int
 
 
 class EdgeGE(EdgeMain):

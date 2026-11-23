@@ -1,5 +1,9 @@
-from core.vertice.vertexMain import VertexMain
-from core.vertice.maze_vertex_role import MazeVertexRole
+if __package__.startswith("backend."):
+    from .vertexMain import VertexMain
+    from .maze_vertex_role import MazeVertexRole
+else:
+    from core.vertice.vertexMain import VertexMain
+    from core.vertice.maze_vertex_role import MazeVertexRole
 
 
 class VertexGM(VertexMain):
